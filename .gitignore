@@ -1,0 +1,6 @@
+*.pdf
+.ipynb_checkpoints/
+__pycache__/
+filtro_fir.v
+tb_filtro_fir.v
+tp5_BrianGerard.ipynb
