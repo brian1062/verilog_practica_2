@@ -68,7 +68,7 @@ def eyediagram(data, n, offset, period):
         plt.plot(x, data[(i*span+xoff):((i+1)*span+xoff)],'b')       
     plt.grid(True)
     plt.xlim(xmin, xmax)
-    plt.show()
+    #plt.show()
 
 
 ## ----------------------Fin de Funciones--------------------------------
