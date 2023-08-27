@@ -15,17 +15,19 @@ Nfreqs = 256          # Cantidad de frecuencias
 
 ## Parametros del filtro de caida cosenoidal
 roll_off   = 0.5 # Roll-Off
-Nbauds = 6     # Cantidad de baudios del filtro
+Nbauds     = 6     # Cantidad de baudios del filtro
 ## Parametros funcionales
 Ts = T/os              # Frecuencia de muestreo
 
 Nsymb=2000
-NB=10 ##8,7 queda media fea la resp en frec
-NBF=9
+NB   =10 ##8,7 queda media fea la resp en frec
+NBF  =9
 round_mode='round'
 
 ##FILTRO COSENO REALZADO punto fijo
 (t,coseno_realsado) = rcosine(roll_off, T,os,Nbauds,Norm=False)
+coseno_realsado = coseno_realsado[:-1] 
+t               = t              [:-1]
 coseno_r_FixPoint = arrayFixedInt(NB, NBF, coseno_realsado, signedMode='S', roundMode=round_mode, saturateMode='saturate')
 #coseno_r_arr = np.zeros(len(coseno_r_FixPoint))
 #for ptr in range(len(coseno_r_arr)):
@@ -34,7 +36,7 @@ coseno_r_FixPoint = arrayFixedInt(NB, NBF, coseno_realsado, signedMode='S', roun
 
 
 #ind_i,ind_q=0
-prbs9_i = np.array([1,1,0,1,0,1,0,1,0]) #SEEDS= I (9’h1AA) 
+prbs9_i = np.array([1,1,0,1,0,1,0,1,0]) #SEEDS= I (9’h1AA) 011010101->101101010
 prbs9_q = np.array([1,1,1,1,1,1,1,1,0]) #SEEDS= Q (9’h1FE).
 symbolsI= []
 symbolsQ= []
@@ -48,20 +50,31 @@ shiftFirI = arrayFixedInt(NB, NBF, shiftFirI, signedMode='S', roundMode='round',
 shiftFirQ = np.zeros(os * Nbauds + 1)
 shiftFirQ = arrayFixedInt(NB, NBF, shiftFirQ, signedMode='S', roundMode='round', saturateMode='saturate')
 
-firI=[]
-firQ=[]
-xval=0
-hval=0
+firI     =[]
+firIround=[]
+firQ     =[]
+##berflags
+b_err_count   =0
+ind_ber       =0
+countbits     =511
+acum_err      =0
+acum_bits_cont=0
+sync          =False
 
-#print(shiftFir)
+buff_receptor_i = np.zeros(4)
+buff_receptor_i = arrayFixedInt(NB, NBF, buff_receptor_i, signedMode='S', roundMode='round', saturateMode='saturate')
+
 
 #->simula ciclo de reloj
-for i in range(Nsymb):#len(prbs9_i)):
+for i in range(Nsymb*3):#len(prbs9_i)):
+    #print(prbs9_i, "indice" , i)
     ##PRBS9 para I
-    prbs9_i = np.roll(prbs9_i,1)
-    prbs9_q = np.roll(prbs9_q,1)
-    prbs9_i[0] = prbs9_i[4] ^ prbs9_i[8]
-    prbs9_q[0] = prbs9_q[4] ^ prbs9_q[8]
+    fb_prbs9_i  = prbs9_i[4] ^ prbs9_i[8]
+    fb_prbs9_q  = prbs9_q[4] ^ prbs9_q[8]
+    prbs9_i     = np.roll(prbs9_i,1)
+    prbs9_q     = np.roll(prbs9_q,1)
+    prbs9_i[0]  = fb_prbs9_i
+    prbs9_q[0]  = fb_prbs9_q
 
     bit_i_fixed = DeFixedInt(NB,NBF,'S',round_mode,'saturate')
     bit_q_fixed = DeFixedInt(NB,NBF,'S',round_mode,'saturate')
@@ -80,6 +93,9 @@ for i in range(Nsymb):#len(prbs9_i)):
         bit_q_fixed.value=1.0
         symbolsQ.append(bit_q_fixed)
 
+    #if(i<30):
+    #    print(prbs9_i[8])
+
     
 
     #shiftFirI sirve para hacer la convolucion con el filtro
@@ -89,6 +105,7 @@ for i in range(Nsymb):#len(prbs9_i)):
     shiftFirQ[0]= symbolsQ[i]
 
 
+    #simula T/os
     for phase in range(os):
         #---Version sin optimizacion
         #temp=firPhase[phase][0]*shiftFir[0]
@@ -97,40 +114,37 @@ for i in range(Nsymb):#len(prbs9_i)):
         #firI.append(temp)
 
         #####SIMBOLS I#######
+        negativo=DeFixedInt(NB,NBF,'S',round_mode,'saturate')
+        negativo.value=-1.0
         if(shiftFirI[0].fValue > 0.0):
             tmp_I=firPhase[phase][0]    
         elif(shiftFirI[0].fValue < 0.0):
-            tmp_I=firPhase[phase][0] * shiftFirI[0]#TODO: BUSCAR ALGO PARA HACER coeficiente negado
-            if(i==0 and phase==0):
-                print(firPhase[phase][0])
-                print(shiftFirI[0])
-                print(tmp_I)
+            tmp_I=firPhase[phase][0] * negativo#shiftFirI[0]#TODO: BUSCAR ALGO PARA HACER coeficiente negado a.assign(-a)
         else:
             tmp_I=shiftFirI[0]
 
-        for ind in range(int((os*Nbauds)/os)):
+        for ind in range(Nbauds-1):
             if(shiftFirI[(ind+1)*os].fValue > 0.0):
-                tmp_I= tmp_I + firPhase[phase][ind*os]  
+                tmp_I= tmp_I + firPhase[phase][(ind+1)*os]  
             elif(shiftFirI[(ind+1)*os].fValue < 0.0):
-                #negativo=DeFixedInt(NB,NBF,'S',round_mode,'saturate')
-                tmp_I= tmp_I + (firPhase[phase][ind*os] * shiftFirI[(ind+1)*os]) 
+                tmp_I= tmp_I + (firPhase[phase][(ind+1)*os] * negativo)#shiftFirI[(ind+1)*os]) ##todoestamodificado
             #else:
             #    tmp+=firPhase[phase][ind*os]
-        if(i<16 and phase==0):
-            print(firPhase[phase][0])
-            print(shiftFirI[0])
-            print(tmp_I.fValue)
 
         ###TODO:si es un valor > a 1 le agrego 1 si no 0
-        ##salida del filtro con redondeo
+        ##salida del filtro con redondeo ----Downsampling---
         BIT_I       = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
-        if(tmp_I.fValue < 0.0):
+        if(tmp_I.fValue < -0.5):
             BIT_I.value=-1.0    
-        elif(tmp_I.fValue > 0.0):
+        elif(tmp_I.fValue > 0.5):
             BIT_I.value=1.0
         else:
             BIT_I.value=0.0
-        firI.append(BIT_I)
+        
+        firI.append(tmp_I)
+        #firIround.append(BIT_I)
+        buff_receptor_i = np.roll(buff_receptor_i,1)
+        buff_receptor_i[0]=BIT_I
 
         #####SIMBOLS Q#######------------------------------------------
         if(shiftFirQ[0].fValue > 0.0):
@@ -140,16 +154,16 @@ for i in range(Nsymb):#len(prbs9_i)):
         else:
             tmp_Q=shiftFirQ[0]
 
-        for ind in range(int((os*Nbauds)/os)):
+        for ind in range(Nbauds-1):
             if(shiftFirQ[(ind+1)*os].fValue > 0.0):
-                tmp_Q= tmp_Q + firPhase[phase][ind*os]  
+                tmp_Q= tmp_Q + firPhase[phase][(ind+1)*os]  
             elif(shiftFirQ[(ind+1)*os].fValue < 0.0):
-                tmp_Q= tmp_Q + (firPhase[phase][ind*os] * shiftFirQ[(ind+1)*os]) 
+                tmp_Q= tmp_Q + (firPhase[phase][(ind+1)*os] * negativo) 
             #else:
             #    tmp+=firPhase[phase][ind*os]
 
         ###TODO:si es un valor > a 1 le agrego 1 si no 0
-        ##salida del filtro con redondeo
+        ##salida del filtro con redondeo ----Downsampling---
         #BIT_Q       = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
         #if(tmp_Q.fValue < 0.0):
         #    BIT_Q.value=-1.0    
@@ -158,6 +172,33 @@ for i in range(Nsymb):#len(prbs9_i)):
         #else:
         #    BIT_Q.value=0.0
         firQ.append(tmp_Q)
+    
+
+    ####Downsampling
+    if(buff_receptor_i[ind_ber].fValue != symbolsI[i].fValue):
+        if(sync==False):
+            b_err_count += 1
+        else:
+            acum_err    += 1
+            print("error acumulado: ", acum_err)
+    if(sync):
+        acum_bits_cont+=1
+      
+    countbits   -=   1
+    if(countbits == 0 and sync==False):  ##SINCRONIZACION
+        if(b_err_count > 10):#fase incorrecta
+            print("Numero de errores: ",b_err_count, "Indice simbolo: ", i,"  Indice vectBER:", ind_ber)
+            ind_ber += 1
+            if(ind_ber>=os):
+                ind_ber=0
+        else:
+            print("Numero de errores: ",b_err_count, "Indice simbolo: ", i,"  Indice vectBER:", ind_ber)
+            print("sincronizado prbs9 con ber")
+            sync=True
+
+        b_err_count = 0
+        countbits = 511
+
 
 
 simb_total_I = np.zeros(len(firI))
@@ -167,7 +208,7 @@ for i in range(len(firI)):
 for i in range(len(firQ)):
     simb_total_Q[i]=firQ[i].fValue
 
-offset=64#os*16 retraso de mi filtro
+offset=0#os*16 retraso de mi filtro
 
 sib_reciv_i= firI[offset::os]; simb_recibI= np.zeros(len(sib_reciv_i))
 sib_reciv_q= firQ[offset::os]; simb_recibQ= np.zeros(len(sib_reciv_q))
@@ -252,7 +293,7 @@ plt.xlim(0,100)
 plt.grid(True)
 
 ##Diagrama de ojo
-eyediagram(simb_recibI[64:len(simb_recibI)-64],os,5,Nbauds)
+eyediagram(simb_recibI[100:len(simb_recibI)-100],os,5,Nbauds)
 eyediagram(simb_recibQ[100:len(simb_recibQ)-100],os,5,Nbauds)
 
 
@@ -262,8 +303,8 @@ plt.figure(figsize=[6,6])
 plt.suptitle("Diagrama de constelacion")
 for i in range(os):
     plt.subplot(2, os//2, i+1)
-    plt.plot(simb_total_I[100+i:len(simb_total_I)-(100-i):int(os)],
-            simb_total_Q[100+i:len(simb_total_Q)-(100-i):int(os)],
+    plt.plot(simb_total_I[64+i:len(simb_total_I)-(64-i):int(os)],
+            simb_total_Q[64+i:len(simb_total_Q)-(64-i):int(os)],
                 '.',linewidth=2.0)
     plt.grid(True)
     plt.xlim((-2, 2))
