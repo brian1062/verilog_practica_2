@@ -50,23 +50,32 @@ shiftFirI = arrayFixedInt(NB, NBF, shiftFirI, signedMode='S', roundMode='round',
 shiftFirQ = np.zeros(os * Nbauds + 1)
 shiftFirQ = arrayFixedInt(NB, NBF, shiftFirQ, signedMode='S', roundMode='round', saturateMode='saturate')
 
-firI     =[]
-firIround=[]
-firQ     =[]
+firI            = [ ]
+firIround       = [ ]
+firQ            = [ ]
 ##berflags
-b_err_count   =0
-ind_ber       =0
-countbits     =511
-acum_err      =0
-acum_bits_cont=0
-sync          =False
+b_err_count     = 0
+ind_ber         = 0
+countbits       = 511
+acum_err        = 0
+acum_bits_cont  = 0
+sync            = False
 
 buff_receptor_i = np.zeros(4)
 buff_receptor_i = arrayFixedInt(NB, NBF, buff_receptor_i, signedMode='S', roundMode='round', saturateMode='saturate')
+buff_receptor_q = np.zeros(4)
+buff_receptor_q = arrayFixedInt(NB, NBF, buff_receptor_q, signedMode='S', roundMode='round', saturateMode='saturate')
+
+
+buff_ber_i = np.zeros(511)
+buff_ber_i = arrayFixedInt(NB, NBF, buff_ber_i, signedMode='S', roundMode='round', saturateMode='saturate')
+
+buff_ber_q = np.zeros(511)
+buff_ber_q = arrayFixedInt(NB, NBF, buff_ber_q, signedMode='S', roundMode='round', saturateMode='saturate')
 
 
 #->simula ciclo de reloj
-for i in range(Nsymb*3):#len(prbs9_i)):
+for i in range(Nsymb*7):#len(prbs9_i)):
     #print(prbs9_i, "indice" , i)
     ##PRBS9 para I
     fb_prbs9_i  = prbs9_i[4] ^ prbs9_i[8]
@@ -92,9 +101,6 @@ for i in range(Nsymb*3):#len(prbs9_i)):
     else:
         bit_q_fixed.value=1.0
         symbolsQ.append(bit_q_fixed)
-
-    #if(i<30):
-    #    print(prbs9_i[8])
 
     
 
@@ -133,29 +139,29 @@ for i in range(Nsymb*3):#len(prbs9_i)):
 
         ###TODO:si es un valor > a 1 le agrego 1 si no 0
         ##salida del filtro con redondeo ----Downsampling---
-        BIT_I       = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
-        if(tmp_I.fValue < -0.5):
-            BIT_I.value=-1.0    
-        elif(tmp_I.fValue > 0.5):
-            BIT_I.value=1.0
+        BIT_I             = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
+        if(tmp_I.fValue   < -0.5 ):
+            BIT_I.value   = -1.0    
+        elif(tmp_I.fValue >  0.5 ):
+            BIT_I.value   =  1.0
         else:
-            BIT_I.value=0.0
+            BIT_I.value   = 0.0
         
         firI.append(tmp_I)
         #firIround.append(BIT_I)
-        buff_receptor_i = np.roll(buff_receptor_i,1)
-        buff_receptor_i[0]=BIT_I
+        buff_receptor_i   = np.roll(buff_receptor_i,1)   #[3]=P0,[2]=P1
+        buff_receptor_i[0]= BIT_I
 
         #####SIMBOLS Q#######------------------------------------------
         if(shiftFirQ[0].fValue > 0.0):
             tmp_Q=firPhase[phase][0]    
         elif(shiftFirQ[0].fValue < 0.0):
-            tmp_Q=firPhase[phase][0] * shiftFirQ[0]#TODO: BUSCAR ALGO PARA HACER coeficiente negado
+            tmp_Q=firPhase[phase][0] * negativo#TODO: BUSCAR ALGO PARA HACER coeficiente negado
         else:
             tmp_Q=shiftFirQ[0]
 
         for ind in range(Nbauds-1):
-            if(shiftFirQ[(ind+1)*os].fValue > 0.0):
+            if(shiftFirQ[(ind+1)*os].fValue   > 0.0):
                 tmp_Q= tmp_Q + firPhase[phase][(ind+1)*os]  
             elif(shiftFirQ[(ind+1)*os].fValue < 0.0):
                 tmp_Q= tmp_Q + (firPhase[phase][(ind+1)*os] * negativo) 
@@ -163,19 +169,29 @@ for i in range(Nsymb*3):#len(prbs9_i)):
             #    tmp+=firPhase[phase][ind*os]
 
         ###TODO:si es un valor > a 1 le agrego 1 si no 0
-        ##salida del filtro con redondeo ----Downsampling---
-        #BIT_Q       = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
-        #if(tmp_Q.fValue < 0.0):
-        #    BIT_Q.value=-1.0    
-        #elif(tmp_Q.fValue > 0.0):
-        #    BIT_Q.value=1.0
-        #else:
-        #    BIT_Q.value=0.0
+        ##salida del filtro con redondeo 
+        BIT_Q             = DeFixedInt(NB,NBF,'S',round_mode,'saturate')#Si lo defino antes guarda basura
+        if(tmp_Q.fValue   < -0.5): #TODO: EN HARDWARE SOLO TENER EN CUENTA EL BIT "S"
+            BIT_Q.value   = -1.0    
+        elif(tmp_Q.fValue >  0.5):
+            BIT_Q.value   =  1.0
+        else:
+            BIT_Q.value   =  0.0
+
         firQ.append(tmp_Q)
+        buff_receptor_q   = np.roll(buff_receptor_q,1)   #[3]=P0,[2]=P1
+        buff_receptor_q[0]= BIT_Q
     
 
+    ###--------RECEPTOR(Downsampling)--------(I)
+    buff_ber_i=np.roll(buff_ber_i,1)
+    buff_ber_i[0]= symbolsI[i]
+    buff_ber_q=np.roll(buff_ber_q,1)
+    buff_ber_q[0]= symbolsQ[i]
     ####Downsampling
-    if(buff_receptor_i[ind_ber].fValue != symbolsI[i].fValue):
+    if(buff_ber_i[ind_ber].fValue != buff_receptor_i[3].fValue
+       or buff_ber_q[ind_ber].fValue != buff_receptor_q[3].fValue): ### buff_receptor_q[3] fase optima es P0
+        #print(buff_receptor_i[ind_ber].fValue, symbolsI[i].fValue)
         if(sync==False):
             b_err_count += 1
         else:
@@ -189,7 +205,7 @@ for i in range(Nsymb*3):#len(prbs9_i)):
         if(b_err_count > 10):#fase incorrecta
             print("Numero de errores: ",b_err_count, "Indice simbolo: ", i,"  Indice vectBER:", ind_ber)
             ind_ber += 1
-            if(ind_ber>=os):
+            if(ind_ber>=511):##nunca deberia llegar a 511
                 ind_ber=0
         else:
             print("Numero de errores: ",b_err_count, "Indice simbolo: ", i,"  Indice vectBER:", ind_ber)
@@ -197,9 +213,9 @@ for i in range(Nsymb*3):#len(prbs9_i)):
             sync=True
 
         b_err_count = 0
-        countbits = 511
+        countbits   = 511
 
-
+print("Cantidad de errores a partir de Sincronizacion: ",acum_err, " bits transmitidos: ", acum_bits_cont)
 
 simb_total_I = np.zeros(len(firI))
 simb_total_Q = np.zeros(len(firQ))
