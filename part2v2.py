@@ -78,12 +78,7 @@ buff_ber_q = arrayFixedInt(NB, NBF, buff_ber_q, signedMode='S', roundMode='round
 for i in range(Nsymb*7):#len(prbs9_i)):
     #print(prbs9_i, "indice" , i)
     ##PRBS9 para I
-    fb_prbs9_i  = prbs9_i[4] ^ prbs9_i[8]
-    fb_prbs9_q  = prbs9_q[4] ^ prbs9_q[8]
-    prbs9_i     = np.roll(prbs9_i,1)
-    prbs9_q     = np.roll(prbs9_q,1)
-    prbs9_i[0]  = fb_prbs9_i
-    prbs9_q[0]  = fb_prbs9_q
+
 
     bit_i_fixed = DeFixedInt(NB,NBF,'S',round_mode,'saturate')
     bit_q_fixed = DeFixedInt(NB,NBF,'S',round_mode,'saturate')
@@ -101,7 +96,14 @@ for i in range(Nsymb*7):#len(prbs9_i)):
     else:
         bit_q_fixed.value=1.0
         symbolsQ.append(bit_q_fixed)
-
+    
+    #Hago aca asi no pierdo el primer valor
+    fb_prbs9_i  = prbs9_i[4] ^ prbs9_i[8]
+    fb_prbs9_q  = prbs9_q[4] ^ prbs9_q[8]
+    prbs9_i     = np.roll(prbs9_i,1)
+    prbs9_q     = np.roll(prbs9_q,1)
+    prbs9_i[0]  = fb_prbs9_i
+    prbs9_q[0]  = fb_prbs9_q
     
 
     #shiftFirI sirve para hacer la convolucion con el filtro
