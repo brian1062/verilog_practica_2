@@ -95,8 +95,6 @@ module filter
       end
     end
 
-    //reg signed [NB_INPUT+NB_COEFF-1:0] prod     [3:0]; //! Partial Products
-    
     reg signed [NB_COEFF-1:0]          sel_h    [5:0]; 
     integer ptr;
     integer phase;
@@ -107,13 +105,16 @@ module filter
                                       3 ;
       for(ptr=0;ptr<6;ptr=ptr+1) begin:selcoef
         if (ptr==0) begin
-            if(phase==0)
-                sel_h[ptr] <= (i_is_data[7])? ~coeff[ptr] : coeff[ptr];
-            else
+            if(phase==0) begin
+                sel_h[ptr] <= (i_is_data[7])? ~coeff[ptr] : coeff[ptr]; 
+            end
+            else begin
                 sel_h[ptr] <= (register[phase])? ~coeff[phase] : coeff[phase];
+            end
         end
-        else
+        else begin
             sel_h[ptr] <= (register[(ptr*OV_SAMP)+phase])? ~coeff[(ptr*OV_SAMP)+phase] : coeff[(ptr*OV_SAMP)+phase];
+        end
       end    
     end
 
@@ -126,6 +127,7 @@ module filter
     assign sum[4] = sum[3]  + sel_h[4];
     assign sum[5] = sum[4]  + sel_h[5];
 
+    //! Diezmado ver si anda bien !!
     assign o_os_data = ( ~|sum[3][NB_ADD-1 -: NB_SAT+1] || &sum[3][NB_ADD-1 -: NB_SAT+1]) ? sum[3][NB_ADD-(NBI_ADD-NBI_OUTPUT) - 1 -: NB_OUTPUT] :
     (sum[3][NB_ADD-1]) ? {{1'b1},{NB_OUTPUT-1{1'b0}}} : {{1'b0},{NB_OUTPUT-1{1'b1}}};
 
