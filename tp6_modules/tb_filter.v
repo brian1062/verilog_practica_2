@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-module tb_tp6();
+module tb_filter();
 
 parameter NB_INPUT   = 8; //! NB of input
 parameter NBF_INPUT  = 7; //! NBF of input
@@ -12,40 +12,40 @@ parameter OV_SAMP    = 4; //! Oversampling
 
 reg                   i_reset   ;
 reg                   clock     ;//  T/4
-reg                   tb_en     ;//  T
-reg  [NB_INPUT-1:0]   tb_is_data;
-
-wire [NB_OUTPUT-1:0]  tb_os_data;
+wire signed       [NB_INPUT-1:0]   o_I_filtred;
+wire              [3:0]     i_sw;
+reg           [3:0]    conect_sw;
 
 initial begin
     clock               = 1'b0       ;
+    conect_sw           = 4'b0000    ;
     i_reset             = 1'b0       ;
     #100 i_reset        = 1'b1       ;
     #110 i_reset        = 1'b0       ;
+    #110 conect_sw      = 4'b0001    ;
     #100000 $finish                  ;
 
     end
 
 always #5 clock = ~clock;
 
-filter
-#(    
-    .NB_INPUT       (NB_INPUT), //! NB of input
-    .NBF_INPUT      (NBF_INPUT), //! NBF of input
-    .NB_OUTPUT      (NB_OUTPUT), //! NB of output
-    .NBF_OUTPUT     (NBF_OUTPUT), //! NBF of output
-    .NB_COEFF       (NB_COEFF), //! NB of Coefficients
-    .NBF_COEFF      (NBF_COEFF), //! NBF of Coefficients)
-    .OV_SAMP        (OV_SAMP)
-)
-  u_filter
-    (
-        .o_os_data      (tb_os_data), //! Output Sample   //No necesitamos esto creo
-        .i_is_data      (tb_is_data), //! Input Sample 
-        .i_enb          (), //! Enable
-        .i_valid        (), //! Validation
-        .i_srst         (), //! Reset
-        .clk            ()  //! Clock
-    );
+assign i_sw = conect_sw;
+
+topLevel
+#(
+    .NB_SW     (4)         ,
+    .NB_LEDS   (4)         ,
+    .NB_INPUT  (NB_INPUT)  , //! NB of input
+    .NBF_INPUT (NBF_INPUT) , //! NBF of input
+    .OV_SAMP   (OV_SAMP)
+ )
+  u_toplevel
+(
+    //.o_led(),
+    .i_sw (i_sw),
+    .o_I_wire_filtred(o_I_filtred),
+    .reset(i_reset),        //!Reset
+    .clock(clock)         //!Clock funciona a T/4
+);
 
 endmodule
