@@ -20,8 +20,8 @@ Nbauds     = 6     # Cantidad de baudios del filtro
 Ts = T/os              # Frecuencia de muestreo
 
 Nsymb=2000
-NB   =10 ##8,7 queda media fea la resp en frec
-NBF  =9
+NB   =8 ##8,7 queda media fea la resp en frec
+NBF  =7
 round_mode='round'
 
 ##FILTRO COSENO REALZADO punto fijo

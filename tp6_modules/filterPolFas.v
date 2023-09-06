@@ -25,9 +25,9 @@ module filterPolFas
 
     reg        [         1:0]   state_counter      ; // Contador de estados: 00, 01, 10
     reg  signed[NB_COEFF-1:0] selected_coeffs[ 5:0]; // Coeficientes a usar
-    wire signed[NB_COEFF-1:0]          coeff [23:0]; //! Matrix for Coefficients
+    wire signed[NB_COEFF-1:0]           coeff[23:0]; //! Matrix for Coefficients
 
-    reg  signed [NB_INPUT         -1:0] register [23:1];
+    reg  signed [NB_INPUT-1:0]       register[23:1];
 
     assign coeff[ 0]  = 8'b0000_0000;
     assign coeff[ 1]  = 8'b0000_0001;
@@ -68,10 +68,10 @@ module filterPolFas
                 if(state_counter == 2'b00)begin:srmove_P0
                     for(ptr2=1;ptr2<24;ptr2=ptr2+1) begin:srmove
                         if(ptr2==1)begin
-                        register[ptr2] <= i_is_data;
+                        register[ptr2] <= i_is_data        ;
                         end
                         else begin
-                        register[ptr2] <= register[ptr2-1];
+                        register[ptr2] <= register [ptr2-1];
                         end
                     end
                 end
@@ -83,6 +83,7 @@ module filterPolFas
 
 
     integer i;
+    //TODO: FALTA EN LOS CASOS(del inicio) QUE register=0 no asignarle nada!
     always@(posedge clk) begin:selectcoeff
         if(i_srst)begin
             state_counter <= 2'b00;

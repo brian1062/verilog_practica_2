@@ -12,17 +12,22 @@ parameter OV_SAMP    = 4; //! Oversampling
 
 reg                   i_reset   ;
 reg                   clock     ;//  T/4
-wire signed       [NB_INPUT-1:0]   o_I_filtred;
+wire signed       [NB_INPUT-1:0]   o_I_filtred_T;
+wire signed       [NB_INPUT-1:0]   o_I_from_filt_to_down;
 wire              [3:0]     i_sw;
 reg           [3:0]    conect_sw;
+wire T;
 
 initial begin
     clock               = 1'b0       ;
     conect_sw           = 4'b0000    ;
     i_reset             = 1'b0       ;
     #100 i_reset        = 1'b1       ;
+    #100 conect_sw      = 4'b0001    ;
     #110 i_reset        = 1'b0       ;
-    #110 conect_sw      = 4'b0001    ;
+    //#150 i_reset        = 1'b1       ;
+    #150 conect_sw      = 4'b1101    ;
+    //#110 i_reset        = 1'b0       ;
     #100000 $finish                  ;
 
     end
@@ -43,8 +48,10 @@ topLevel
 (
     //.o_led(),
     .i_sw (i_sw),
-    .o_I_wire_filtred(o_I_filtred),
+    .o_I_filtred_DownS(o_I_filtred_T),//cada T,
+    .o_I_from_filt_to_down(o_I_from_filt_to_down),
     .reset(i_reset),        //!Reset
+    .clockT(T),
     .clock(clock)         //!Clock funciona a T/4
 );
 
