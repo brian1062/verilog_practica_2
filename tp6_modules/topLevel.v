@@ -43,7 +43,7 @@ always @(posedge clock) begin:timer0set
 end
 
 assign i_valid  = (timer0==2'b00)? 1'b1 : 1'b0; //! valid input T
-assign clockT = i_valid;
+assign clockT = i_valid; 
 
 assign enb_Tx = i_sw[0];
 assign o_I_from_prbs = I_wire;
@@ -52,53 +52,74 @@ assign o_I_from_filt_to_down= I_wire_filtred;
 
 prbs9
 #(
-    .SEED(9'b110101010),
-    .NB_OUTPUT(NB_INPUT)
+    .SEED            (9'b110101010         ),
+    .NB_OUTPUT       (NB_INPUT             )
 
 )
   u_prbs9_I
     (
-        .o_symb     (I_wire),     //! Symbol to output
-        .i_rst       (reset),     //! Reset
-        .i_valid   (i_valid),     //! Validate 1 T
-        .clk         (clock)      //! Clock
+        .o_symb      (I_wire               ),     //! Symbol to output
+        .i_enable    (enb_Tx               ),
+        .i_rst       (reset                ),     //! Reset
+        .i_valid     (i_valid              ),     //! Validate 1 T
+        .clk         (clock                )      //! Clock
     );
 
 filterPolFas
 #(    
-    .NB_INPUT      (NB_INPUT ), //! NB of input
-    .NBF_INPUT     (NBF_INPUT), //! NBF of input
-    .NB_OUTPUT     (NB_INPUT ), //! NB of output
-    .NBF_OUTPUT    (NBF_INPUT), //! NBF of output
-    .NB_COEFF      (NB_INPUT ), //! NB of Coefficients
-    .NBF_COEFF     (NBF_INPUT)  //! NBF of Coefficients)
+    .NB_INPUT        (NB_INPUT             ), //! NB of input
+    .NBF_INPUT       (NBF_INPUT            ), //! NBF of input
+    .NB_OUTPUT       (NB_INPUT             ), //! NB of output
+    .NBF_OUTPUT      (NBF_INPUT            ), //! NBF of output
+    .NB_COEFF        (NB_INPUT             ), //! NB of Coefficients
+    .NBF_COEFF       (NBF_INPUT            )  //! NBF of Coefficients)
 )
   u_filterPolFas_I
     (
-        .o_os_data(I_wire_filtred), //! Output Sample   //sale p3p2p1p0p3p2p1p0->
-        .i_is_data(I_wire        ), //! Input Sample 
-        .i_enb    (enb_Tx        ), //! Enable
-        .i_srst   (reset         ), //! Reset
-        .clk      (clock         )  //! Clock
+        .o_os_data    (I_wire_filtred      ), //! Output Sample   //sale p3p2p1p0p3p2p1p0->
+        .i_is_data    (I_wire              ), //! Input Sample 
+        .i_enb        (enb_Tx              ), //! Enable
+        .i_srst       (reset               ), //! Reset
+        .clk          (clock               )  //! Clock
     );
 
 downSampler
 #(
-    .NB_OUTPUT  (NB_INPUT) , //! NB of output
-    .NBF_OUTPUT (NBF_INPUT), //! NBF of output
-    .OV_SAMP    (OV_SAMP)
+    .NB_OUTPUT       (NB_INPUT             ), //! NB of output
+    .NBF_OUTPUT      (NBF_INPUT            ), //! NBF of output
+    .OV_SAMP         (OV_SAMP              )
 
 )
   u_downSampler_I
-    (
-    .i_phase_selector(i_sw[3:2]),  //! Phase selector i_sw[3:2]
-    .i_filt_sample   (I_wire_filtred),
-    .o_down_sample   (o_I_filtred_DownS),
-    .clock           (clock),
-    .reset           (reset)
+    (   
+        .i_phase_selector(i_sw[3:2]        ),  //! Phase selector i_sw[3:2]
+        .i_filt_sample   (I_wire_filtred   ),
+        .o_down_sample   (o_I_filtred_DownS),
+        .clock           (clock            ),
+        .reset           (reset            )
     );
 
- 
+ber
+#(
+    //parameter INIT_SEED = 9'b110101010,      //! Initial seed to prbs not used
+    .NB_PRBS          (9                   ),  //! Number bit. prbs
+    .NB_BER           (64                  ),  //! Error storange bit number
+    .LIMIT            (511                 ),  //! Max limit pseudorandom  2**9 -1
+    .LIMIT2           (1024                )   //! Max limit arrayBER
+
+)
+  u_ber_I
+    (
+        .o_count_bit  (                    ),  //TODO: wire de 64 bits ->to vector machine
+        .o_count_err  (                    ),
+        .i_enbRx      (i_sw[1]             ),
+        .i_valid      (i_valid             ),  //!i_valid trabaja a T
+        .i_prbs       (I_wire              ),
+        .i_Rx         (o_I_filtred_DownS   ),
+        .i_clock      (clock               ),
+        .i_reset      (reset               )
+
+    );
 
 
 endmodule

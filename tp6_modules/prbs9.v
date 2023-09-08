@@ -6,6 +6,7 @@ module prbs9
 )
 (
     output  [NB_OUTPUT-1:0] o_symb,     //! Symbol to output
+    input                 i_enable,     //! Enable/disable
     input                    i_rst,     //! Reset
     input                  i_valid,     //! Validate 1 T
     input                      clk      //! Clock
@@ -19,14 +20,14 @@ module prbs9
       array  <=       SEED;
       symbol <=   array[0];  //! first symbol
     end
-
-    else if(i_valid) begin
-      array    <= {(array[0] ^ array[4]), array[8 : 1]}; //! ESTA LOGICA CORRESPONDE A LA DEL part2v2.py
-      symbol <=  array[0];
-    end
-
-    else begin
-      symbol <= symbol;
+    else if(i_enable)begin
+       if(i_valid) begin
+        array    <= {(array[0] ^ array[4]), array[8 : 1]}; //! ESTA LOGICA CORRESPONDE A LA DEL part2v2.py
+        symbol <=  array[0];
+      end
+      // else begin
+      //    symbol <= symbol;
+      // end
     end
 
   end

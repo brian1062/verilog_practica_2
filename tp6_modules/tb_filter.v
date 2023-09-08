@@ -26,7 +26,7 @@ initial begin
     #100 conect_sw      = 4'b0001    ;
     #110 i_reset        = 1'b0       ;
     //#150 i_reset        = 1'b1       ;
-    #150 conect_sw      = 4'b1101    ;
+    #150 conect_sw      = 4'b0001    ;
     //#110 i_reset        = 1'b0       ;
     #100000 $finish                  ;
 
