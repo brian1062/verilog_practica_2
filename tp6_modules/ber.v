@@ -1,7 +1,17 @@
+//! @title Bit Error Rate
+//! @author Brian Gerard
+//! @date 08-09-2023
+
+//! - Bit Error Rate. En primera etapa se encarga de sincronizar
+//! - la salida de la prbs con la salida del filtro para luego poder
+//! - contar la cantidad de bits transmitidos y la cantidad de error
+//! - en la recepcion-transmision.
+
+
 module ber
 #(
     //parameter INIT_SEED = 9'b110101010, //! Initial seed to prbs
-    parameter NB_PRBS   =            9,
+    parameter NB_PRBS   =            9,   //! 
     parameter NB_BER    =           64,
     parameter LIMIT     =          511,
     parameter LIMIT2    =         1024

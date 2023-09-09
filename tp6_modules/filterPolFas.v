@@ -1,3 +1,13 @@
+//! @title Filtro Polifasico
+//! @author Brian Gerard
+//! @date 08-09-2023
+
+//! - Filtro polifasico en el cual le ingresa una señal extraida 
+//! - de la prbs9 (periodo de clock T), la cual se upSamplea con un
+//! - OverSample de 4 (periodo de clock T/4) las mismas se filtran
+//! - con coeficientes de una señal coseno realzado. La salida o_os_data
+//! - nos devuelve lo filtrado con las distintas fases ->|P3|P2|P1|P0|
+
 module filterPolFas
 #(
     parameter NB_INPUT = 8,

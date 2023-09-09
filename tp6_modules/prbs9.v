@@ -1,3 +1,9 @@
+//! @title PRBS9
+//! @author Brian Gerard
+//! @date 08-09-2023
+
+//! - Generador pseudo aleatorio de 9 bit prbs9
+
 
 module prbs9
 #(

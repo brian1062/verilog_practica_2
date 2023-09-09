@@ -1,16 +1,25 @@
+//! @title Down Sampler
+//! @author Brian Gerard
+//! @date 08-09-2023
+
+//! - Downsampler al cual se le ingresa la salida de nuestro filtro
+//! - polifasico |P3|P2|P1|P0|-> y extrae determinada fase dependiendo
+//! - el valor del i_phase_selector[1:0] por lo que el mismo trabaja
+//! - a con un periodo T.
+
 module downSampler
 #(
     parameter NB_OUTPUT  = 8, //! NB of output
     parameter NBF_OUTPUT = 7, //! NBF of output
-    parameter OV_SAMP    = 4
+    parameter OV_SAMP    = 4  //! Oversample value
 
 )
 (
     input         [          1:0] i_phase_selector,  //! Phase selector i_sw[3:2]
-    input  signed [NB_OUTPUT-1:0]    i_filt_sample,
-    output signed [NB_OUTPUT-1:0]    o_down_sample,
-    input                                    clock,
-    input                                    reset
+    input  signed [NB_OUTPUT-1:0]    i_filt_sample,  //! Input from filtro T/4
+    output signed [NB_OUTPUT-1:0]    o_down_sample,  //! Output from downsampler T
+    input                                    clock,  //! Reset
+    input                                    reset   //! Clock
 );
 
 reg [NB_OUTPUT-1:0]    array_phase[OV_SAMP-1:0];

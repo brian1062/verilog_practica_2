@@ -1,13 +1,19 @@
+//! @title Test-Bench Prbs9
+//! @author Brian Gerard
+//! @date 08-09-2023
+
+//! - TestBench diseñado para comprobar el correcto funcionamiento de la prbs9
+
 `timescale 1ns/100ps
 
 module tb_prbs();
 parameter NB_OUTPUT = 8;
 
-wire signed     [NB_OUTPUT-1:0]             o_symbol_I ;
-wire signed     [NB_OUTPUT-1:0]             o_symbol_Q ;
-reg                   enable     ;
-reg                   i_reset    ;
-reg                   clock      ;
+wire signed     [NB_OUTPUT-1:0]      o_symbol_I;
+wire signed     [NB_OUTPUT-1:0]      o_symbol_Q;
+reg                                      enable;
+reg                                     i_reset;
+reg                                       clock;
 
 initial begin
     clock               = 1'b0       ;
@@ -24,29 +30,29 @@ always #5 clock = ~clock;
 
 prbs9
 #(
-    .SEED     (9'b110101010 ),
-    .NB_OUTPUT(NB_OUTPUT    )
+    .SEED     (9'b110101010  ),
+    .NB_OUTPUT(NB_OUTPUT     )
 )
-  u_prbs9_I
+  u_prbs9_I 
     (
         .o_symb   (o_symbol_I),     //! Symbol to output
-        .i_enable (enable    ),
+        .i_enable (enable    ),     //! Enable/disable
         .i_rst    (i_reset   ),     //! Reset
         .i_valid  (clock     ),     //! Validate 1 T
         .clk      (clock     )      //! Clock
     );
 prbs9
 #(
-    .SEED       (9'b111111110  ),
-    .NB_OUTPUT  (NB_OUTPUT     )
+    .SEED       (9'b111111110),
+    .NB_OUTPUT  (NB_OUTPUT   )
 )
     u_prbs9_Q
     (
-            .o_symb     (o_symbol_Q ),     //! Symbol to output
-            .i_enable   (enable     ),
-            .i_rst      (i_reset    ),     //! Reset
-            .i_valid    (clock      ),     //! Validate 1 T
-            .clk        (clock      )      //! Clock
+        .o_symb   (o_symbol_Q),     //! Symbol to output
+        .i_enable (enable    ),     //! Enable/disable
+        .i_rst    (i_reset   ),     //! Reset
+        .i_valid  (clock     ),     //! Validate 1 T
+        .clk      (clock     )      //! Clock
     );
 
 
