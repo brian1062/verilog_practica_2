@@ -204,7 +204,7 @@ for i in range(Nsymb*7):#len(prbs9_i)):
       
     countbits   -=   1
     if(countbits == 0 and sync==False):  ##SINCRONIZACION
-        if(b_err_count > 10):#fase incorrecta
+        if(b_err_count > 0):#fase incorrecta
             print("Numero de errores: ",b_err_count, "Indice simbolo: ", i,"  Indice vectBER:", ind_ber)
             ind_ber += 1
             if(ind_ber>=511):##nunca deberia llegar a 511

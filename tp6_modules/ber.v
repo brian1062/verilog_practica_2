@@ -18,8 +18,11 @@ module ber
 
 )
 (
+    output [9 :0]    o_indice,  //para visualizar
+
     output [NB_BER-1:0]  o_count_bit,
     output [NB_BER-1:0]  o_count_err,
+    output                     o_led,
 
     input                    i_enbRx,
     input                    i_valid,  //!i_valid trabaja a T
@@ -35,7 +38,7 @@ reg     [LIMIT2-1 : 0]             prbs_local;  //! Datos recibidos de la prbs
 reg     [       9 : 0]              pos_local;  //! Pos local a la que apunta el arreglo
 reg     [NB_PRBS-1: 0]                  count;                       
 reg     [NB_BER -1: 0]               acum_err;  //usar 64bits integer tiene 32
-reg     [NB_BER -1: 0]               acum_bit;  //usar 64bits 
+reg     [NB_BER -1: 0]               acum_bit;  //usar 64bits
 
 always @(posedge i_clock) begin :syncBerPrbs
     if(i_reset)begin
@@ -50,13 +53,14 @@ always @(posedge i_clock) begin :syncBerPrbs
         if(i_enbRx)begin
             if(i_valid)begin
                 count      <=  count + 1'b1; 
-                prbs_local <= {i_prbs,prbs_local[LIMIT2-2 : 0]}; 
-                acum_err   <= (prbs_local[pos_local] ^ i_Rx)? acum_err+1'b1: acum_err;
+                prbs_local <= {prbs_local[LIMIT2-2 : 0],i_prbs};
+                acum_err <= (i_Rx !== 1'bx) ? (prbs_local[pos_local] ^ i_Rx) ? acum_err : acum_err + 1'b1 : acum_err;
+                //acum_err   <= (prbs_local[pos_local] ^ (i_Rx ?? 1'b0))? acum_err+1'b1: acum_err; // HAGO (i_Rx ?? 1'b0) esta asignacion pq el primer valor es desconocido
 
                 if(~sync) begin
-                    count             <=  count +    1'b1; 
-                    if(count == (2**NB_PRBS - 1))begin //si es igual a 511
-                        if(acum_err > 64'b1_0000)begin     //TODO: como cambio ese 64 por algo mas parametrizable?
+                    //count             <=  count +    1'b1; 
+                    if(count == (9'b111111111))begin //si es igual a 511 eso no debe andar-> 2**NB_PRBS - 1
+                        if(acum_err > 64'b0000)begin     //TODO: como cambio ese 64 por algo mas parametrizable?
                             count     <=  {NB_PRBS{1'b0}};
                             pos_local <= pos_local + 1'b1;  //Se le asigna un retardo extra
                         end
@@ -67,7 +71,8 @@ always @(posedge i_clock) begin :syncBerPrbs
                         acum_err   <= { NB_BER{1'b0}};
                     end
                 end
-                else begin:BerSyncronized
+
+                else if (sync) begin:BerSyncronized
                     acum_bit <= acum_bit + 1'b1;
                 end
     
@@ -76,7 +81,10 @@ always @(posedge i_clock) begin :syncBerPrbs
     end
 end
 
-assign o_count_bit = (sync)? acum_bit: { NB_BER{1'b0}} ;
-assign o_count_err = (sync)? acum_err: { NB_BER{1'b0}} ;
+assign o_count_bit = (sync)? acum_bit: { NB_BER{1'b0}}        ;
+assign o_count_err = (sync)? acum_err: { NB_BER{1'b0}}        ;
+assign o_led       = (sync & (acum_err == 64'b0))? 1'b1 : 1'b0;
+
+assign o_indice = pos_local;
 
 endmodule

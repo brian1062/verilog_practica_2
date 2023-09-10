@@ -28,7 +28,7 @@ integer ind1;
 integer ind2;
 always @(posedge clock) begin
     if(reset) begin
-        for(ind1=1;ind1<OV_SAMP;ind1=ind1+1) begin:initPhases
+        for(ind1=0;ind1<OV_SAMP;ind1=ind1+1) begin:initPhases
             array_phase[ind1] <= {NB_OUTPUT{1'b0}};
           end        
     end
