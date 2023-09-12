@@ -41,7 +41,7 @@ initial begin
     i_sw                = 4'b0000    ;
     i_reset             = 1'b0       ;
     #105 i_reset        = 1'b1       ;
-    #100 i_sw           = 4'b1111    ; //!Enable Tx y Rx
+    #100 i_sw           = 4'b0011    ; //!Enable Tx y Rx
     #125 i_reset        = 1'b0       ;
     //#150 i_reset        = 1'b1       ;
     //#150 i_sw           = 4'b0011    ;
