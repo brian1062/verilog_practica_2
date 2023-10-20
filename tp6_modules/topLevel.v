@@ -45,7 +45,7 @@ wire                                   ledber;
 //!Ber wires I
 wire        [NB_BER-1   : 0]   I_wire_count_bit;
 wire        [NB_BER-1   : 0]   I_wire_count_err;
-wire        [NB_PRBS-1  : 0] I_wire_retardo_ber;
+wire        [NB_PRBS    : 0] I_wire_retardo_ber;
 wire                                o_led_ber_I;
 //!Ber wires Q
 wire        [NB_BER-1   : 0]   Q_wire_count_bit;
@@ -62,8 +62,8 @@ wire                                      reset;
 
 assign sw_wire = (sel_mux) ? sw_from_vio   :
                              i_sw          ;
-assign reset   = (sel_mux) ? reset_from_vio:
-                             i_reset       ;                      
+assign reset   = (sel_mux) ? ~reset_from_vio:
+                             ~i_reset       ;                      
 //-----------End_VIO ---------------------------
 
 //! -Generador de clock en un periodo T
